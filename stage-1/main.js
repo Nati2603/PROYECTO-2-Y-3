@@ -10,9 +10,7 @@ const state = {
   error: null
 };
 
-// ─────────────────────────
 // Cargar tu Pokémon (Mew)
-// ─────────────────────────
 async function loadPlayer() {
   state.loadingPlayer = true;
   render(state);
@@ -27,9 +25,7 @@ async function loadPlayer() {
 
 loadPlayer();
 
-// ─────────────────────────
-// DEBOUNCE + BÚSQUEDA
-// ─────────────────────────
+// Debounce y búsqueda
 
 const input = document.getElementById("search");
 let timeout = null;
@@ -61,12 +57,10 @@ input.addEventListener("input", () => {
     }
 
     render(state);
-  }, 300); // ← debounce 300ms
+  }, 300); // debounce 300ms
 });
 
-// ─────────────────────────
-// BOTÓN IR A BATALLA
-// ─────────────────────────
+// Botón para ir a batalla
 
 const battleBtn = document.getElementById("battleBtn");
 
