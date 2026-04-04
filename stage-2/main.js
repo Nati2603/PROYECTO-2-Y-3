@@ -1,9 +1,8 @@
 import { render } from "./render.js";
+import TRAINER from "../trainer.config.js";
 
-// Cargar datos desde localStorage
 const data = JSON.parse(localStorage.getItem("battle"));
 
-// Estado de la batalla
 const state = {
   player: data.player,
   opponent: data.opponent,
@@ -11,30 +10,41 @@ const state = {
   playerHP: Math.floor(data.player.stats[0].base_stat * 2.5),
   opponentHP: Math.floor(data.opponent.stats[0].base_stat * 2.5),
 
+  playerMaxHP: Math.floor(data.player.stats[0].base_stat * 2.5),
+  opponentMaxHP: Math.floor(data.opponent.stats[0].base_stat * 2.5),
+
   playerPosition: 2,
   locked: false,
   incomingAttack: null,
   log: [],
   phase: "fighting",
   attackOnCooldown: false,
-  definitiveUsed: false
+  definitiveUsed: false,
+
+  playerMoves: [
+    { name: formatMoveName(data.player.moves[0]?.move?.name || "pound"), power: 60 },
+    { name: formatMoveName(data.player.moves[1]?.move?.name || "mega-punch"), power: 60 },
+    { name: formatMoveName(data.player.moves[2]?.move?.name || "psychic"), power: 60 }
+  ]
 };
 
-// Timer del enemigo
 let attackTimeout = null;
+let cooldownTimeout = null;
 
-// Función de espera
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function formatMoveName(name) {
+  return name.replace("-", " ");
 }
 
-// Colores por tipo (THEMING)
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getTypeColor(type) {
   const colors = {
     fire: "orange",
     water: "blue",
     grass: "green",
-    electric: "yellow",
+    electric: "gold",
     psychic: "purple",
     dragon: "red",
     ghost: "gray",
@@ -44,48 +54,68 @@ function getTypeColor(type) {
   return colors[type] || "pink";
 }
 
-// Cooldown del jugador
-function startCooldown(duration, button) {
-  state.attackOnCooldown = true;
-  button.disabled = true;
+function calcPlayerDamage(movePower) {
+  return Math.floor(movePower * 0.3) + Math.floor(Math.random() * movePower * 0.4);
+}
 
-  setTimeout(() => {
+function calcEnemyDamage() {
+  const opponentAttackStat = state.opponent.stats[1].base_stat;
+  return Math.floor(opponentAttackStat * 0.4) + Math.floor(Math.random() * 20);
+}
+
+function startCooldown(duration) {
+  state.attackOnCooldown = true;
+  render(state);
+  addButtonEvents();
+
+  cooldownTimeout = setTimeout(() => {
     state.attackOnCooldown = false;
-    button.disabled = false;
+    render(state);
+    addButtonEvents();
   }, duration);
 }
 
-// Detectar fin de batalla
 function checkBattleEnd() {
   if (state.playerHP <= 0) {
+    state.playerHP = 0;
     state.phase = "ended";
-    state.log.push("Perdiste la batalla");
+    state.log.push(TRAINER.loseMessage);
     clearTimeout(attackTimeout);
+    clearTimeout(cooldownTimeout);
+    return true;
   }
 
   if (state.opponentHP <= 0) {
+    state.opponentHP = 0;
     state.phase = "ended";
-    state.log.push("Ganaste la batalla");
+    state.log.push(TRAINER.winMessage);
     clearTimeout(attackTimeout);
+    clearTimeout(cooldownTimeout);
+    return true;
   }
+
+  return false;
 }
 
-// Resolver ataque enemigo
 async function resolveEnemyAttack() {
   const target = Math.floor(Math.random() * 3) + 1;
 
   state.incomingAttack = target;
   state.locked = false;
+  state.log.push(`El enemigo apunta a la posición ${target}`);
   render(state);
+  addButtonEvents();
 
   await wait(600);
 
   state.locked = true;
   render(state);
+  addButtonEvents();
 
   if (state.playerPosition === target) {
-    state.playerHP -= 10;
-    state.log.push("¡Te golpearon!");
+    const damage = calcEnemyDamage();
+    state.playerHP -= damage;
+    state.log.push(`¡Te golpearon! Recibiste ${damage} de daño`);
   } else {
     state.log.push("¡Esquivaste!");
   }
@@ -94,11 +124,10 @@ async function resolveEnemyAttack() {
   state.locked = false;
 
   checkBattleEnd();
-
   render(state);
+  addButtonEvents();
 }
 
-// Programar ataques enemigos
 function scheduleNextAttack() {
   const delay = (3 + Math.random() * 7) * 1000;
 
@@ -111,7 +140,58 @@ function scheduleNextAttack() {
   }, delay);
 }
 
-// Movimiento del jugador
+function usePlayerAttack(moveIndex) {
+  if (state.phase !== "fighting") return;
+  if (state.attackOnCooldown) return;
+
+  const move = state.playerMoves[moveIndex];
+  const damage = calcPlayerDamage(move.power);
+
+  state.opponentHP -= damage;
+  state.log.push(`${state.player.name} usó ${move.name} e hizo ${damage} de daño`);
+
+  checkBattleEnd();
+  render(state);
+  addButtonEvents();
+
+  if (state.phase === "fighting") {
+    startCooldown(3000);
+  }
+}
+
+function useUltimateMove() {
+  if (state.phase !== "fighting") return;
+  if (state.definitiveUsed) return;
+
+  state.opponentHP = 0;
+  state.definitiveUsed = true;
+  state.log.push(`¡${state.player.name} usó ${TRAINER.definitiveMoveName}!`);
+  state.log.push(TRAINER.definitiveMoveFlavor);
+
+  checkBattleEnd();
+  render(state);
+  addButtonEvents();
+}
+
+function resetBattle() {
+  state.playerHP = state.playerMaxHP;
+  state.opponentHP = state.opponentMaxHP;
+  state.playerPosition = 2;
+  state.locked = false;
+  state.incomingAttack = null;
+  state.log = [];
+  state.phase = "fighting";
+  state.attackOnCooldown = false;
+  state.definitiveUsed = false;
+
+  clearTimeout(attackTimeout);
+  clearTimeout(cooldownTimeout);
+
+  render(state);
+  addButtonEvents();
+  scheduleNextAttack();
+}
+
 function onKeyDown(e) {
   if (state.phase !== "fighting") return;
   if (state.locked) return;
@@ -125,69 +205,44 @@ function onKeyDown(e) {
   }
 
   render(state);
+  addButtonEvents();
 }
 
-// Iniciar todo cuando cargue la página
-document.addEventListener("DOMContentLoaded", () => {
-  const attackBtn = document.getElementById("attackBtn");
-  const resetBtn = document.getElementById("resetBtn");
+function addButtonEvents() {
+  const attackBtn1 = document.getElementById("attackBtn1");
+  const attackBtn2 = document.getElementById("attackBtn2");
+  const attackBtn3 = document.getElementById("attackBtn3");
   const ultimateBtn = document.getElementById("ultimateBtn");
+  const resetBtn = document.getElementById("resetBtn");
 
-  // 🎨 Aplicar color según tipo
+  if (attackBtn1) {
+    attackBtn1.onclick = () => usePlayerAttack(0);
+  }
+
+  if (attackBtn2) {
+    attackBtn2.onclick = () => usePlayerAttack(1);
+  }
+
+  if (attackBtn3) {
+    attackBtn3.onclick = () => usePlayerAttack(2);
+  }
+
+  if (ultimateBtn) {
+    ultimateBtn.onclick = useUltimateMove;
+  }
+
+  if (resetBtn) {
+    resetBtn.onclick = resetBattle;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   const playerType = data.player.types[0].type.name;
   const color = getTypeColor(playerType);
   document.body.style.backgroundColor = color;
 
-  // ATAQUE DEL JUGADOR
-  attackBtn.addEventListener("click", () => {
-    if (state.phase !== "fighting") return;
-    if (state.attackOnCooldown) return;
-
-    const damage = Math.floor(20 + Math.random() * 20);
-
-    state.opponentHP -= damage;
-    checkBattleEnd();
-
-    state.log.push(`Atacaste e hiciste ${damage} de daño`);
-
-    startCooldown(3000, attackBtn);
-
-    render(state);
-  });
-
-  // DEFINITIVE MOVE
-  ultimateBtn.addEventListener("click", () => {
-    if (state.definitiveUsed) return;
-    if (state.phase !== "fighting") return;
-
-    state.opponentHP = 0;
-    state.definitiveUsed = true;
-
-    state.log.push("¡Usaste el movimiento definitivo!");
-
-    checkBattleEnd();
-    render(state);
-  });
-
-  // BOTÓN REINICIAR
-  resetBtn.addEventListener("click", () => {
-    state.playerHP = Math.floor(data.player.stats[0].base_stat * 2.5);
-    state.opponentHP = Math.floor(data.opponent.stats[0].base_stat * 2.5);
-    state.playerPosition = 2;
-    state.locked = false;
-    state.incomingAttack = null;
-    state.log = [];
-    state.phase = "fighting";
-    state.attackOnCooldown = false;
-    state.definitiveUsed = false;
-
-    clearTimeout(attackTimeout);
-
-    render(state);
-    scheduleNextAttack();
-  });
-
   render(state);
+  addButtonEvents();
   document.addEventListener("keydown", onKeyDown);
   scheduleNextAttack();
 });

@@ -28,7 +28,7 @@ async function loadPlayer() {
 loadPlayer();
 
 // ─────────────────────────
-// 🔥 DEBOUNCE + BÚSQUEDA PRO
+// DEBOUNCE + BÚSQUEDA
 // ─────────────────────────
 
 const input = document.getElementById("search");
@@ -56,7 +56,7 @@ input.addEventListener("input", () => {
       state.opponent = data;
       state.error = null;
 
-      // 🔥 guardar último oponente
+      // guardar último oponente
       localStorage.setItem("lastOpponent", name);
     }
 
@@ -65,7 +65,7 @@ input.addEventListener("input", () => {
 });
 
 // ─────────────────────────
-// 🔥 BOTÓN IR A BATALLA
+// BOTÓN IR A BATALLA
 // ─────────────────────────
 
 const battleBtn = document.getElementById("battleBtn");
