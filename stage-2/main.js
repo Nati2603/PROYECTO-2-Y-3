@@ -5,14 +5,19 @@ const data = JSON.parse(localStorage.getItem("battle"));
 
 // Estado de la batalla
 const state = {
+  player: data.player,
+  opponent: data.opponent,
+
   playerHP: Math.floor(data.player.stats[0].base_stat * 2.5),
   opponentHP: Math.floor(data.opponent.stats[0].base_stat * 2.5),
+
   playerPosition: 2,
   locked: false,
   incomingAttack: null,
   log: [],
   phase: "fighting",
-  attackOnCooldown: false
+  attackOnCooldown: false,
+  definitiveUsed: false
 };
 
 // Timer del enemigo
@@ -21,6 +26,22 @@ let attackTimeout = null;
 // Función de espera
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Colores por tipo (THEMING)
+function getTypeColor(type) {
+  const colors = {
+    fire: "orange",
+    water: "blue",
+    grass: "green",
+    electric: "yellow",
+    psychic: "purple",
+    dragon: "red",
+    ghost: "gray",
+    normal: "white"
+  };
+
+  return colors[type] || "pink";
 }
 
 // Cooldown del jugador
@@ -110,6 +131,12 @@ function onKeyDown(e) {
 document.addEventListener("DOMContentLoaded", () => {
   const attackBtn = document.getElementById("attackBtn");
   const resetBtn = document.getElementById("resetBtn");
+  const ultimateBtn = document.getElementById("ultimateBtn");
+
+  // 🎨 Aplicar color según tipo
+  const playerType = data.player.types[0].type.name;
+  const color = getTypeColor(playerType);
+  document.body.style.backgroundColor = color;
 
   // ATAQUE DEL JUGADOR
   attackBtn.addEventListener("click", () => {
@@ -128,6 +155,20 @@ document.addEventListener("DOMContentLoaded", () => {
     render(state);
   });
 
+  // DEFINITIVE MOVE
+  ultimateBtn.addEventListener("click", () => {
+    if (state.definitiveUsed) return;
+    if (state.phase !== "fighting") return;
+
+    state.opponentHP = 0;
+    state.definitiveUsed = true;
+
+    state.log.push("¡Usaste el movimiento definitivo!");
+
+    checkBattleEnd();
+    render(state);
+  });
+
   // BOTÓN REINICIAR
   resetBtn.addEventListener("click", () => {
     state.playerHP = Math.floor(data.player.stats[0].base_stat * 2.5);
@@ -138,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     state.log = [];
     state.phase = "fighting";
     state.attackOnCooldown = false;
+    state.definitiveUsed = false;
 
     clearTimeout(attackTimeout);
 

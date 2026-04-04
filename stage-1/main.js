@@ -10,28 +10,37 @@ const state = {
   error: null
 };
 
+// ─────────────────────────
+// Cargar tu Pokémon (Mew)
+// ─────────────────────────
 async function loadPlayer() {
   state.loadingPlayer = true;
   render(state);
 
   const data = await getPokemon(TRAINER.favoritePokemon);
 
-  state.loadingPlayer = false;
   state.player = data;
+  state.loadingPlayer = false;
 
   render(state);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+loadPlayer();
 
-  loadPlayer();
+// ─────────────────────────
+// 🔥 DEBOUNCE + BÚSQUEDA PRO
+// ─────────────────────────
 
-  const input = document.getElementById("search");
-  const btn = document.getElementById("searchBtn");
-  const battleBtn = document.getElementById("battleBtn");
+const input = document.getElementById("search");
+let timeout = null;
 
-  btn.addEventListener("click", async () => {
-    const name = input.value;
+input.addEventListener("input", () => {
+  clearTimeout(timeout);
+
+  timeout = setTimeout(async () => {
+    const name = input.value.toLowerCase().trim();
+
+    if (!name) return;
 
     state.loadingOpponent = true;
     render(state);
@@ -42,20 +51,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (data.error) {
       state.opponent = null;
+      state.error = "Pokémon no encontrado";
     } else {
       state.opponent = data;
+      state.error = null;
+
+      // 🔥 guardar último oponente
+      localStorage.setItem("lastOpponent", name);
     }
 
     render(state);
-  });
+  }, 300); // ← debounce 300ms
+});
 
-  battleBtn.addEventListener("click", () => {
-    localStorage.setItem("battle", JSON.stringify({
+// ─────────────────────────
+// 🔥 BOTÓN IR A BATALLA
+// ─────────────────────────
+
+const battleBtn = document.getElementById("battleBtn");
+
+battleBtn.addEventListener("click", () => {
+  if (!state.player || !state.opponent) return;
+
+  localStorage.setItem(
+    "battle",
+    JSON.stringify({
       player: state.player,
       opponent: state.opponent
-    }));
+    })
+  );
 
-    window.location.href = "../stage-2/index.html";
-  });
-
+  window.location.href = "../stage-2/index.html";
 });

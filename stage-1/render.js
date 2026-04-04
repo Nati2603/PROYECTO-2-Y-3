@@ -1,40 +1,56 @@
 import TRAINER from "../trainer.config.js";
 
 export function render(state) {
-  const trainerDiv = document.getElementById("trainer");
-  const playerDiv = document.getElementById("player");
-  const opponentDiv = document.getElementById("opponent");
+  const trainer = document.getElementById("trainer");
+  const player = document.getElementById("player");
+  const opponent = document.getElementById("opponent");
   const battleBtn = document.getElementById("battleBtn");
+  const error = document.getElementById("error");
 
-  // Trainer card
-  trainerDiv.innerHTML = `
+  // ───────── TRAINER CARD ─────────
+  trainer.innerHTML = `
     <h2>${TRAINER.name}</h2>
     <p>${TRAINER.hometown}</p>
     <p>${TRAINER.catchphrase}</p>
   `;
 
-  // Player
+  // ───────── PLAYER ─────────
   if (state.loadingPlayer) {
-    playerDiv.innerHTML = "Cargando...";
+    player.innerHTML = "<p>Cargando...</p>";
   } else if (state.player) {
-    playerDiv.innerHTML = `
+    player.innerHTML = `
       <h3>${state.player.name}</h3>
-      <img src="${state.player.sprites.front_default}">
+      <img src="${state.player.sprites.front_default}" width="120">
+
+      <p>HP: ${state.player.stats[0].base_stat}</p>
+      <p>Attack: ${state.player.stats[1].base_stat}</p>
+      <p>Defense: ${state.player.stats[2].base_stat}</p>
+      <p>Speed: ${state.player.stats[5].base_stat}</p>
     `;
   }
 
-  // Opponent
+  // ───────── OPPONENT ─────────
   if (state.loadingOpponent) {
-    opponentDiv.innerHTML = "Cargando...";
+    opponent.innerHTML = "<p>Cargando...</p>";
   } else if (state.opponent) {
-    opponentDiv.innerHTML = `
+    opponent.innerHTML = `
       <h3>${state.opponent.name}</h3>
-      <img src="${state.opponent.sprites.front_default}">
+      <img src="${state.opponent.sprites.front_default}" width="120">
+
+      <p>HP: ${state.opponent.stats[0].base_stat}</p>
+      <p>Attack: ${state.opponent.stats[1].base_stat}</p>
+      <p>Defense: ${state.opponent.stats[2].base_stat}</p>
+      <p>Speed: ${state.opponent.stats[5].base_stat}</p>
     `;
   }
 
-  // Enable battle button
+  // ───────── ERROR ─────────
+  error.innerText = state.error || "";
+
+  // ───────── ACTIVAR BOTÓN ─────────
   if (state.player && state.opponent) {
     battleBtn.disabled = false;
+  } else {
+    battleBtn.disabled = true;
   }
 }
