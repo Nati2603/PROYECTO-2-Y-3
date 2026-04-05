@@ -23,7 +23,7 @@ export function render(state) {
         <h3>${state.opponent.name}</h3>
         <p>HP: ${state.opponentHP}</p>
         <div class="hp-bar">
-          <div class="hp-fill" style="width: ${opponentHpPercent}%;"></div>
+          <div class="hp-fill" style="width: ${opponentHpPercent}%;"></div> 
         </div>
       </div>
 

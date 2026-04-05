@@ -97,6 +97,7 @@ function checkBattleEnd() {
   return false;
 }
 
+//Resolución del ataque
 async function resolveEnemyAttack() {
   const target = Math.floor(Math.random() * 3) + 1;
 
@@ -127,6 +128,8 @@ async function resolveEnemyAttack() {
   render(state);
   addButtonEvents();
 }
+
+//Ataque enemigo automático
 
 function scheduleNextAttack() {
   const delay = (3 + Math.random() * 7) * 1000;

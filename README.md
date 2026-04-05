@@ -25,3 +25,7 @@ https://developer.mozilla.org/es/docs/conflicting/Web/API/Document_Object_Model_
 https://docs.github.com/es/pages?utm_source=chatgpt.com
 
 Por supuesto, también utilizando la documentación que nos ha facilitado el profesor.
+
+#Entregas 
+GitHub Pages: https://nati2603.github.io/PROYECTO-2-Y-3/
+Video: https://www.loom.com/share/e18e0742b5974298bac50b1ce2bd34b6
